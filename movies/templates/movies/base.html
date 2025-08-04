@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MovieDB{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'movie-red': '#dc2626',
+                        'movie-dark': '#1f2937',
+                        'movie-light': '#f3f4f6'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'movies:home' %}" class="flex items-center space-x-2">
+                        <i class="fas fa-film text-movie-red text-2xl"></i>
+                        <span class="text-xl font-bold text-gray-900">MovieDB</span>
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-8">
+                    <a href="{% url 'movies:home' %}" class="text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        Home
+                    </a>
+                    <a href="{% url 'movies:movie_list' %}" class="text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        Movies
+                    </a>
+                    <a href="{% url 'movies:tv_show_list' %}" class="text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        TV Shows
+                    </a>
+                    <a href="{% url 'movies:actor_list' %}" class="text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        Actors
+                    </a>
+                </div>
+                
+                <div class="flex items-center">
+                    <form action="{% url 'movies:search' %}" method="GET" class="flex items-center">
+                        <div class="relative">
+                            <input type="text" name="q" placeholder="Search movies, TV shows, actors..." 
+                                   class="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-movie-red focus:border-transparent"
+                                   value="{{ request.GET.q|default:'' }}">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                        </div>
+                        <button type="submit" class="ml-2 px-4 py-2 bg-movie-red text-white rounded-lg hover:bg-red-700 transition-colors">
+                            Search
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">MovieDB</h3>
+                    <p class="text-gray-400">Your ultimate destination for movies and TV shows.</p>
+                </div>
+                <div>
+                    <h4 class="text-md font-semibold mb-4">Browse</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="{% url 'movies:movie_list' %}" class="hover:text-white transition-colors">Movies</a></li>
+                        <li><a href="{% url 'movies:tv_show_list' %}" class="hover:text-white transition-colors">TV Shows</a></li>
+                        <li><a href="{% url 'movies:actor_list' %}" class="hover:text-white transition-colors">Actors</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-md font-semibold mb-4">Genres</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="{% url 'movies:movie_list' %}?genre=ACTION" class="hover:text-white transition-colors">Action</a></li>
+                        <li><a href="{% url 'movies:movie_list' %}?genre=DRAMA" class="hover:text-white transition-colors">Drama</a></li>
+                        <li><a href="{% url 'movies:movie_list' %}?genre=COMEDY" class="hover:text-white transition-colors">Comedy</a></li>
+                        <li><a href="{% url 'movies:movie_list' %}?genre=THRILLER" class="hover:text-white transition-colors">Thriller</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-md font-semibold mb-4">Connect</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-facebook text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 MovieDB. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html> 

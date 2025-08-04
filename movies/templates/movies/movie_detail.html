@@ -1,0 +1,211 @@
+{% extends 'movies/base.html' %}
+{% load movie_extras %}
+
+{% block title %}{{ movie.title }} - MovieDB{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav class="mb-6">
+    <ol class="flex items-center space-x-2 text-sm text-gray-600">
+        <li><a href="{% url 'movies:home' %}" class="hover:text-movie-red transition-colors">Home</a></li>
+        <li><i class="fas fa-chevron-right text-gray-400"></i></li>
+        <li><a href="{% url 'movies:movie_list' %}" class="hover:text-movie-red transition-colors">Movies</a></li>
+        <li><i class="fas fa-chevron-right text-gray-400"></i></li>
+        <li class="text-gray-900">{{ movie.title }}</li>
+    </ol>
+</nav>
+
+<!-- Movie Header -->
+<div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+    <div class="md:flex">
+        <!-- Poster -->
+        <div class="md:w-1/3">
+            {% if movie.poster %}
+            <img src="{{ movie.poster }}" alt="{{ movie.title }}" class="w-full h-auto object-cover">
+            {% else %}
+            <div class="w-full h-96 bg-gray-200 flex items-center justify-center">
+                <i class="fas fa-film text-gray-400 text-8xl"></i>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Movie Info -->
+        <div class="md:w-2/3 p-8">
+            <div class="flex items-start justify-between mb-4">
+                <h1 class="text-4xl font-bold text-gray-900">{{ movie.title }}</h1>
+                <div class="flex items-center space-x-2">
+                    <span class="bg-movie-red text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        {{ movie.genre|title }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-6 mb-6">
+                <div class="flex items-center">
+                    <div class="flex text-yellow-400 text-lg">
+                        {% for star in movie.rating|rating_stars %}
+                        {% if star.0 %}
+                        <i class="fas fa-star text-yellow-400"></i>
+                        {% elif star.1 %}
+                        <i class="fas fa-star-half-alt text-yellow-400"></i>
+                        {% else %}
+                        <i class="far fa-star text-gray-300"></i>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="ml-3 text-lg font-semibold text-gray-700">
+                        {{ movie.rating|format_rating }}
+                    </span>
+                </div>
+                <span class="text-gray-600">{{ movie.release_date|date:"F j, Y" }}</span>
+                <span class="text-gray-600">{{ movie.duration }}</span>
+            </div>
+            
+            <p class="text-gray-700 text-lg leading-relaxed mb-6">{{ movie.description }}</p>
+            
+            <!-- Cast and Crew -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Cast</h3>
+                    <div class="space-y-2">
+                        {% for actor in movie.actors.all %}
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-gray-600 text-sm"></i>
+                            </div>
+                            <span class="text-gray-700">{{ actor.full_name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Directors</h3>
+                    <div class="space-y-2">
+                        {% for director in movie.directors.all %}
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                <i class="fas fa-video text-gray-600 text-sm"></i>
+                            </div>
+                            <span class="text-gray-700">{{ director.full_name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Similar Movies -->
+{% if similar_movies %}
+<section class="mb-8">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">Similar Movies</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        {% for similar_movie in similar_movies %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+            <a href="{% url 'movies:movie_detail' similar_movie.id %}">
+                {% if similar_movie.poster %}
+                <img src="{{ similar_movie.poster }}" alt="{{ similar_movie.title }}" class="w-full h-80 object-cover">
+                {% else %}
+                <div class="w-full h-80 bg-gray-200 flex items-center justify-center">
+                    <i class="fas fa-film text-gray-400 text-4xl"></i>
+                </div>
+                {% endif %}
+            </a>
+            <div class="p-4">
+                <h3 class="font-semibold text-lg mb-2 truncate">
+                    <a href="{% url 'movies:movie_detail' similar_movie.id %}" class="hover:text-movie-red transition-colors">
+                        {{ similar_movie.title }}
+                    </a>
+                </h3>
+                <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
+                    <span>{{ similar_movie.genre|title }}</span>
+                    <span>{{ similar_movie.release_date.year }}</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="flex text-yellow-400 text-sm">
+                        {% for star in similar_movie.rating|rating_stars %}
+                        {% if star.0 %}
+                        <i class="fas fa-star text-yellow-400"></i>
+                        {% elif star.1 %}
+                        <i class="fas fa-star-half-alt text-yellow-400"></i>
+                        {% else %}
+                        <i class="far fa-star text-gray-300"></i>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="ml-2 text-sm text-gray-600">{{ similar_movie.rating|format_rating }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Movie Details -->
+<section class="bg-white rounded-lg shadow-lg p-8">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">Movie Details</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Information</h3>
+            <dl class="space-y-3">
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Title</dt>
+                    <dd class="text-gray-900 font-medium">{{ movie.title }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Genre</dt>
+                    <dd class="text-gray-900 font-medium">{{ movie.genre|title }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Release Date</dt>
+                    <dd class="text-gray-900 font-medium">{{ movie.release_date|date:"F j, Y" }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Duration</dt>
+                    <dd class="text-gray-900 font-medium">{{ movie.duration }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Rating</dt>
+                    <dd class="text-gray-900 font-medium">
+                        {% if movie.rating != "No ratings yet" %}
+                        {{ movie.rating }} / 5
+                        {% else %}
+                        No ratings yet
+                        {% endif %}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+        
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Cast & Crew</h3>
+            <div class="space-y-4">
+                <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Cast ({{ movie.actors.count }})</h4>
+                    <div class="flex flex-wrap gap-2">
+                        {% for actor in movie.actors.all %}
+                        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                            {{ actor.full_name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Directors ({{ movie.directors.count }})</h4>
+                    <div class="flex flex-wrap gap-2">
+                        {% for director in movie.directors.all %}
+                        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                            {{ director.full_name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %} 

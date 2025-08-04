@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Black">
+    <option name="sdkName" value="Python 3.13 (django-performance-pitfalls)" />
+  </component>
+  <component name="GitLabDefaultAccount">
+    <option name="defaultAccountId" value="c6cd82c0-2a67-496e-8a95-a907647b0a61" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (django-performance-pitfalls)" project-jdk-type="Python SDK" />
+</project>

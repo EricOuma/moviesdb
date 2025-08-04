@@ -1,0 +1,164 @@
+{% extends 'movies/base.html' %}
+{% load movie_extras %}
+
+{% block title %}TV Shows - MovieDB{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-8">
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">TV Shows</h1>
+    <p class="text-gray-600">Discover amazing TV series from around the world</p>
+</div>
+
+<!-- Filters and Search -->
+<div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+            <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <input type="text" name="search" id="search" 
+                   value="{{ current_search|default:'' }}"
+                   placeholder="Search TV shows..."
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-movie-red focus:border-transparent">
+        </div>
+        
+        <div>
+            <label for="genre" class="block text-sm font-medium text-gray-700 mb-2">Genre</label>
+            <select name="genre" id="genre" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-movie-red focus:border-transparent">
+                <option value="">All Genres</option>
+                {% for genre_code, genre_name in genres %}
+                <option value="{{ genre_code }}" {% if current_genre == genre_code %}selected{% endif %}>
+                    {{ genre_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div>
+            <label for="sort" class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+            <select name="sort" id="sort" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-movie-red focus:border-transparent">
+                <option value="title" {% if current_sort == 'title' %}selected{% endif %}>Title</option>
+                <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Rating</option>
+                <option value="start_date" {% if current_sort == 'start_date' %}selected{% endif %}>Start Date</option>
+            </select>
+        </div>
+        
+        <div class="flex items-end">
+            <button type="submit" class="w-full bg-movie-red text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                Apply Filters
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Results Count -->
+<div class="mb-6">
+    <p class="text-gray-600">
+        Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} TV shows
+        {% if current_search or current_genre %}
+        (filtered)
+        {% endif %}
+    </p>
+</div>
+
+<!-- TV Shows Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {% for tv_show in page_obj %}
+    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+        <a href="{% url 'movies:tv_show_detail' tv_show.id %}">
+            {% if tv_show.poster %}
+            <img src="{{ tv_show.poster }}" alt="{{ tv_show.title }}" class="w-full h-96 object-cover">
+            {% else %}
+            <div class="w-full h-96 bg-gray-200 flex items-center justify-center">
+                <i class="fas fa-tv text-gray-400 text-6xl"></i>
+            </div>
+            {% endif %}
+        </a>
+        <div class="p-4">
+            <h3 class="font-semibold text-lg mb-2 truncate">
+                <a href="{% url 'movies:tv_show_detail' tv_show.id %}" class="hover:text-movie-red transition-colors">
+                    {{ tv_show.title }}
+                </a>
+            </h3>
+            <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
+                <span class="bg-gray-100 px-2 py-1 rounded">{{ tv_show.genre|title }}</span>
+                <span>{{ tv_show.start_date.year }}</span>
+            </div>
+            <p class="text-gray-600 text-sm mb-3 line-clamp-2">{{ tv_show.description|truncatewords:20 }}</p>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="flex text-yellow-400 text-sm">
+                        {% for star in tv_show.avg_rating|rating_stars %}
+                        {% if star.0 %}
+                        <i class="fas fa-star text-yellow-400"></i>
+                        {% elif star.1 %}
+                        <i class="fas fa-star-half-alt text-yellow-400"></i>
+                        {% else %}
+                        <i class="far fa-star text-gray-300"></i>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="ml-2 text-sm text-gray-600">
+                        {% if tv_show.avg_rating %}
+                        {{ tv_show.avg_rating|format_rating }}
+                        {% else %}
+                        No ratings
+                        {% endif %}
+                    </span>
+                </div>
+                <span class="text-sm text-gray-500">{{ tv_show.seasons.count }} seasons</span>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full text-center py-12">
+        <i class="fas fa-tv text-gray-400 text-6xl mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-600 mb-2">No TV shows found</h3>
+        <p class="text-gray-500">Try adjusting your search criteria or filters.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="mt-12 flex justify-center">
+    <nav class="flex items-center space-x-2">
+        {% if page_obj.has_previous %}
+        <a href="?page=1{% if current_search %}&search={{ current_search }}{% endif %}{% if current_genre %}&genre={{ current_genre }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <i class="fas fa-angle-double-left"></i>
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_genre %}&genre={{ current_genre }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <i class="fas fa-angle-left"></i>
+        </a>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <span class="px-3 py-2 text-sm font-medium text-white bg-movie-red border border-movie-red rounded-md">
+            {{ num }}
+        </span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a href="?page={{ num }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_genre %}&genre={{ current_genre }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            {{ num }}
+        </a>
+        {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_genre %}&genre={{ current_genre }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <i class="fas fa-angle-right"></i>
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_genre %}&genre={{ current_genre }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <i class="fas fa-angle-double-right"></i>
+        </a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %} 
