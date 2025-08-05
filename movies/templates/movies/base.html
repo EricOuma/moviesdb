@@ -1,3 +1,4 @@
+{% load movie_extras %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -33,17 +34,20 @@
                 </div>
                 
                 <div class="flex items-center space-x-8">
-                    <a href="{% url 'movies:home' %}" class="text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    <a href="{% url 'movies:home' %}" class="{% navactive 'home' 'search' %} text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         Home
                     </a>
-                    <a href="{% url 'movies:movie_list' %}" class="text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    <a href="{% url 'movies:movie_list' %}" class="{% navactive 'movie_list' 'movie_detail' %} text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         Movies
                     </a>
-                    <a href="{% url 'movies:tv_show_list' %}" class="text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    <a href="{% url 'movies:tv_show_list' %}" class="{% navactive 'tv_show_list' 'tv_show_detail' %} text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         TV Shows
                     </a>
-                    <a href="{% url 'movies:actor_list' %}" class="text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    <a href="{% url 'movies:actor_list' %}" class="{% navactive 'actor_list' 'actor_detail' %} text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         Actors
+                    </a>
+                    <a href="{% url 'movies:director_list' %}" class="{% navactive 'director_list' 'director_detail' %} text-gray-700 hover:text-movie-red px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        Directors
                     </a>
                 </div>
                 

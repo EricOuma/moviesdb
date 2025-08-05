@@ -171,7 +171,7 @@
                     <dt class="text-gray-600">Rating</dt>
                     <dd class="text-gray-900 font-medium">
                         {% if movie.rating != "No ratings yet" %}
-                        {{ movie.rating }} / 5
+                        {{ movie.rating|floatformat }} / 5
                         {% else %}
                         No ratings yet
                         {% endif %}

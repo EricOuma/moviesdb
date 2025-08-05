@@ -21,7 +21,7 @@
         <div class="flex space-x-4">
             <div class="flex-1">
                 <input type="text" name="q" value="{{ query }}" 
-                       placeholder="Search movies, TV shows, actors..."
+                       placeholder="Search movies, TV shows, actors, directors..."
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-movie-red focus:border-transparent">
             </div>
             <button type="submit" class="px-6 py-3 bg-movie-red text-white rounded-lg hover:bg-red-700 transition-colors">
@@ -40,6 +40,7 @@
                     <option value="movies" {% if content_type == 'movies' %}selected{% endif %}>Movies Only</option>
                     <option value="tv_shows" {% if content_type == 'tv_shows' %}selected{% endif %}>TV Shows Only</option>
                     <option value="actors" {% if content_type == 'actors' %}selected{% endif %}>Actors Only</option>
+                    <option value="directors" {% if content_type == 'directors' %}selected{% endif %}>Directors Only</option>
                 </select>
             </div>
             
@@ -166,17 +167,20 @@
                 <i class="fas fa-times mr-1"></i>Clear all filters
             </a>
             <div class="text-sm text-gray-500">
-                {% if results.movies or results.tv_shows or results.actors %}
+                {% if results.movies or results.tv_shows or results.actors or results.directors %}
                 {% if content_type == 'movies' and results.movies %}
                 {{ results.movies|length }} movies found
                 {% elif content_type == 'tv_shows' and results.tv_shows %}
                 {{ results.tv_shows|length }} TV shows found
                 {% elif content_type == 'actors' and results.actors %}
                 {{ results.actors|length }} actors found
+                {% elif content_type == 'directors' and results.directors %}
+                {{ results.directors|length }} directors found
                 {% else %}
                 {% if results.movies %}{{ results.movies|length }} movies{% endif %}
                 {% if results.tv_shows %}{% if results.movies %}, {% endif %}{{ results.tv_shows|length }} TV shows{% endif %}
                 {% if results.actors %}{% if results.movies or results.tv_shows %}, {% endif %}{{ results.actors|length }} actors{% endif %}
+                {% if results.directors %}{% if results.movies or results.tv_shows or results.actors %}, {% endif %}{{ results.directors|length }} directors{% endif %}
                 found
                 {% endif %}
                 {% endif %}
@@ -186,7 +190,7 @@
 </div>
 
 <!-- Results -->
-{% if results.movies or results.tv_shows or results.actors %}
+{% if results.movies or results.tv_shows or results.actors or results.directors %}
 <div class="space-y-8">
     <!-- Movies Results -->
     {% if results.movies %}
@@ -294,6 +298,39 @@
         </div>
     </section>
     {% endif %}
+
+    <!-- Directors Results -->
+    {% if results.directors %}
+    <section>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <i class="fas fa-video text-movie-red mr-3"></i>
+            Directors ({{ results.directors|length }})
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {% for director in results.directors %}
+            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                <div class="flex items-center space-x-4 mb-4">
+                    <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-video text-gray-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg">
+                            <a href="{% url 'movies:director_detail' director.id %}" class="hover:text-movie-red transition-colors">
+                                {{ director.full_name }}
+                            </a>
+                        </h3>
+                        <p class="text-gray-600 text-sm">{{ director.total_movies }} movies</p>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <p>Movies: {{ director.total_movies }}</p>
+                    <p>TV Shows: {{ director.total_tv_shows }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
 </div>
 
 {% else %}
@@ -317,8 +354,8 @@
 <!-- Empty Search State -->
 <div class="text-center py-12">
     <i class="fas fa-search text-gray-400 text-6xl mb-4"></i>
-    <h3 class="text-xl font-semibold text-gray-600 mb-2">Search Movies, TV Shows & Actors</h3>
-    <p class="text-gray-500 mb-6">Find your favorite content by searching titles, actors, or descriptions.</p>
+    <h3 class="text-xl font-semibold text-gray-600 mb-2">Search Movies, TV Shows, Actors & Directors</h3>
+    <p class="text-gray-500 mb-6">Find your favorite content by searching titles, actors, directors, or descriptions.</p>
     
     <div class="max-w-md mx-auto">
         <form method="GET" action="{% url 'movies:search' %}" class="flex space-x-4">
@@ -331,7 +368,7 @@
         </form>
     </div>
     
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
         <div class="bg-white rounded-lg shadow-sm p-6">
             <i class="fas fa-film text-movie-red text-3xl mb-3"></i>
             <h4 class="font-semibold text-gray-900 mb-2">Movies</h4>
@@ -346,6 +383,11 @@
             <i class="fas fa-user text-movie-red text-3xl mb-3"></i>
             <h4 class="font-semibold text-gray-900 mb-2">Actors</h4>
             <p class="text-gray-600 text-sm">Find your favorite actors and their work</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <i class="fas fa-video text-movie-red text-3xl mb-3"></i>
+            <h4 class="font-semibold text-gray-900 mb-2">Directors</h4>
+            <p class="text-gray-600 text-sm">Discover talented directors and their films</p>
         </div>
     </div>
 </div>

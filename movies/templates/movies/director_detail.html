@@ -1,0 +1,197 @@
+{% extends 'movies/base.html' %}
+{% load movie_extras %}
+
+{% block title %}{{ director.full_name }} - MovieDB{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav class="mb-6">
+    <ol class="flex items-center space-x-2 text-sm text-gray-600">
+        <li><a href="{% url 'movies:home' %}" class="hover:text-movie-red transition-colors">Home</a></li>
+        <li><i class="fas fa-chevron-right text-gray-400"></i></li>
+        <li><a href="{% url 'movies:director_list' %}" class="hover:text-movie-red transition-colors">Directors</a></li>
+        <li><i class="fas fa-chevron-right text-gray-400"></i></li>
+        <li class="text-gray-900">{{ director.full_name }}</li>
+    </ol>
+</nav>
+
+<!-- Director Header -->
+<div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+    <div class="md:flex">
+        <!-- Director Avatar -->
+        <div class="md:w-1/3 p-8 flex items-center justify-center">
+            <div class="w-48 h-48 bg-gray-200 rounded-full flex items-center justify-center">
+                <i class="fas fa-video text-gray-600 text-8xl"></i>
+            </div>
+        </div>
+        
+        <!-- Director Info -->
+        <div class="md:w-2/3 p-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">{{ director.full_name }}</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Movies</h3>
+                    <p class="text-3xl font-bold text-movie-red">{{ director.total_movies }}</p>
+                    <p class="text-sm text-gray-600">Total movies</p>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">TV Shows</h3>
+                    <p class="text-3xl font-bold text-movie-red">{{ director.total_tv_shows }}</p>
+                    <p class="text-sm text-gray-600">Total TV shows</p>
+                </div>
+            </div>
+            
+            {% if director.bio %}
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Biography</h3>
+                <p class="text-gray-700 leading-relaxed">{{ director.bio }}</p>
+            </div>
+            {% endif %}
+            
+            {% if director.birth_date %}
+            <div class="text-sm text-gray-600">
+                <span class="font-medium">Birth Date:</span> {{ director.birth_date|date:"F j, Y" }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Movies Section -->
+{% if director.movies.all %}
+<section class="mb-8">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">Movies</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {% for movie in director.movies.all %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+            <a href="{% url 'movies:movie_detail' movie.id %}">
+                {% if movie.poster %}
+                <img src="{{ movie.poster }}" alt="{{ movie.title }}" class="w-full h-80 object-cover">
+                {% else %}
+                <div class="w-full h-80 bg-gray-200 flex items-center justify-center">
+                    <i class="fas fa-film text-gray-400 text-4xl"></i>
+                </div>
+                {% endif %}
+            </a>
+            <div class="p-4">
+                <h3 class="font-semibold text-lg mb-2 truncate">
+                    <a href="{% url 'movies:movie_detail' movie.id %}" class="hover:text-movie-red transition-colors">
+                        {{ movie.title }}
+                    </a>
+                </h3>
+                <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
+                    <span class="bg-gray-100 px-2 py-1 rounded">{{ movie.genre|title }}</span>
+                    <span>{{ movie.release_date.year }}</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="flex text-yellow-400 text-sm">
+                        {% for star in movie.rating|rating_stars %}
+                        {% if star.0 %}
+                        <i class="fas fa-star text-yellow-400"></i>
+                        {% elif star.1 %}
+                        <i class="fas fa-star-half-alt text-yellow-400"></i>
+                        {% else %}
+                        <i class="far fa-star text-gray-300"></i>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="ml-2 text-sm text-gray-600">{{ movie.rating|format_rating }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- TV Shows Section -->
+{% if director.tv_show_episodes.all %}
+<section class="mb-8">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">TV Shows</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {% for episode in director.tv_show_episodes.all|slice:":12" %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+            <a href="{% url 'movies:tv_show_detail' episode.season.show.id %}">
+                {% if episode.season.show.poster %}
+                <img src="{{ episode.season.show.poster }}" alt="{{ episode.season.show.title }}" class="w-full h-80 object-cover">
+                {% else %}
+                <div class="w-full h-80 bg-gray-200 flex items-center justify-center">
+                    <i class="fas fa-tv text-gray-400 text-4xl"></i>
+                </div>
+                {% endif %}
+            </a>
+            <div class="p-4">
+                <h3 class="font-semibold text-lg mb-2 truncate">
+                    <a href="{% url 'movies:tv_show_detail' episode.season.show.id %}" class="hover:text-movie-red transition-colors">
+                        {{ episode.season.show.title }}
+                    </a>
+                </h3>
+                <p class="text-sm text-gray-600 mb-2">{{ episode.full_title }}</p>
+                <div class="flex items-center justify-between text-sm text-gray-600">
+                    <span class="bg-gray-100 px-2 py-1 rounded">{{ episode.season.show.genre|title }}</span>
+                    <span>{{ episode.season.show.start_date.year }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Director Details -->
+<section class="bg-white rounded-lg shadow-lg p-8">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">Director Details</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Information</h3>
+            <dl class="space-y-3">
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Name</dt>
+                    <dd class="text-gray-900 font-medium">{{ director.full_name }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">First Name</dt>
+                    <dd class="text-gray-900 font-medium">{{ director.first_name }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Last Name</dt>
+                    <dd class="text-gray-900 font-medium">{{ director.last_name }}</dd>
+                </div>
+                {% if director.birth_date %}
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Birth Date</dt>
+                    <dd class="text-gray-900 font-medium">{{ director.birth_date|date:"F j, Y" }}</dd>
+                </div>
+                {% endif %}
+            </dl>
+        </div>
+        
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Career Statistics</h3>
+            <dl class="space-y-3">
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Total Movies</dt>
+                    <dd class="text-gray-900 font-medium">{{ director.total_movies }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Total TV Shows</dt>
+                    <dd class="text-gray-900 font-medium">{{ director.total_tv_shows }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Total Episodes</dt>
+                    <dd class="text-gray-900 font-medium">{{ director.tv_show_episodes.count }}</dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+    
+    {% if director.bio %}
+    <div class="mt-8 pt-8 border-t border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Biography</h3>
+        <p class="text-gray-700 leading-relaxed">{{ director.bio }}</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %} 

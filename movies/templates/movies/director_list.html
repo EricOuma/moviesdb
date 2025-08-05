@@ -1,0 +1,123 @@
+{% extends 'movies/base.html' %}
+
+{% block title %}Directors - MovieDB{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-8">
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">Directors</h1>
+    <p class="text-gray-600">Discover talented directors from around the world</p>
+</div>
+
+<!-- Search -->
+<div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+    <form method="GET" class="flex space-x-4">
+        <div class="flex-1">
+            <input type="text" name="search" 
+                   value="{{ current_search|default:'' }}"
+                   placeholder="Search directors by name..."
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-movie-red focus:border-transparent">
+        </div>
+        <button type="submit" class="px-6 py-3 bg-movie-red text-white rounded-lg hover:bg-red-700 transition-colors">
+            <i class="fas fa-search mr-2"></i>Search
+        </button>
+    </form>
+</div>
+
+<!-- Results Count -->
+<div class="mb-6">
+    <p class="text-gray-600">
+        Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} directors
+        {% if current_search %}
+        (filtered)
+        {% endif %}
+    </p>
+</div>
+
+<!-- Directors Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {% for director in page_obj %}
+    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+        <div class="flex items-center space-x-4 mb-4">
+            <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+                <i class="fas fa-video text-gray-600 text-2xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="font-semibold text-lg">
+                    <a href="{% url 'movies:director_detail' director.id %}" class="hover:text-movie-red transition-colors">
+                        {{ director.full_name }}
+                    </a>
+                </h3>
+                <p class="text-gray-600 text-sm">{{ director.total_movies }} movies</p>
+            </div>
+        </div>
+        
+        <div class="space-y-2 text-sm text-gray-600">
+            <div class="flex justify-between">
+                <span>Movies:</span>
+                <span class="font-medium">{{ director.total_movies }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>TV Shows:</span>
+                <span class="font-medium">{{ director.total_tv_shows }}</span>
+            </div>
+        </div>
+        
+        <div class="mt-4 pt-4 border-t border-gray-200">
+            <a href="{% url 'movies:director_detail' director.id %}" 
+               class="text-movie-red hover:text-red-700 text-sm font-medium transition-colors">
+                View Profile <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-full text-center py-12">
+        <i class="fas fa-video text-gray-400 text-6xl mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-600 mb-2">No directors found</h3>
+        <p class="text-gray-500">Try adjusting your search criteria.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="mt-12 flex justify-center">
+    <nav class="flex items-center space-x-2">
+        {% if page_obj.has_previous %}
+        <a href="?page=1{% if current_search %}&search={{ current_search }}{% endif %}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <i class="fas fa-angle-double-left"></i>
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <i class="fas fa-angle-left"></i>
+        </a>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <span class="px-3 py-2 text-sm font-medium text-white bg-movie-red border border-movie-red rounded-md">
+            {{ num }}
+        </span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a href="?page={{ num }}{% if current_search %}&search={{ current_search }}{% endif %}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            {{ num }}
+        </a>
+        {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <i class="fas fa-angle-right"></i>
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if current_search %}&search={{ current_search }}{% endif %}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <i class="fas fa-angle-double-right"></i>
+        </a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %} 

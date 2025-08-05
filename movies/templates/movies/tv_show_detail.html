@@ -73,24 +73,23 @@
                 </div>
                 <div class="bg-gray-50 rounded-lg p-4 text-center">
                     <h3 class="text-lg font-semibold text-gray-900">
-                        {% with total_episodes=0 %}
-                        {% for season in tv_show.seasons.all %}
-                        {% with total_episodes=total_episodes|add:season.episodes.count %}{% endwith %}
-                        {% endfor %}
-                        {{ total_episodes }}
-                        {% endwith %}
+                        {{ tv_show.total_episodes }}
                     </h3>
                     <p class="text-sm text-gray-600">Episodes</p>
                 </div>
                 <div class="bg-gray-50 rounded-lg p-4 text-center">
-                    <h3 class="text-lg font-semibold text-gray-900">
+                    {% with years=tv_show.end_date.year|subtract:tv_show.start_date.year %}
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            {% if tv_show.end_date %}
+                                {{ years }}
+                            {% else %}
+                                Ongoing
+                            {% endif %}
+                        </h3>
                         {% if tv_show.end_date %}
-                        {{ tv_show.end_date.year|add:"-1"|add:"-"|add:tv_show.start_date.year }}
-                        {% else %}
-                        Ongoing
+                        <p class="text-sm text-gray-600">Years{{ years|pluralize }}</p>
                         {% endif %}
-                    </h3>
-                    <p class="text-sm text-gray-600">Years</p>
+                    {% endwith %}
                 </div>
             </div>
         </div>
@@ -236,7 +235,7 @@
                     <dt class="text-gray-600">Rating</dt>
                     <dd class="text-gray-900 font-medium">
                         {% if tv_show.rating != "No ratings yet" %}
-                        {{ tv_show.rating }} / 5
+                        {{ tv_show.rating|floatformat }} / 5
                         {% else %}
                         No ratings yet
                         {% endif %}
@@ -255,21 +254,16 @@
                 <div class="flex justify-between">
                     <dt class="text-gray-600">Total Episodes</dt>
                     <dd class="text-gray-900 font-medium">
-                        {% with total_episodes=0 %}
-                        {% for season in tv_show.seasons.all %}
-                        {% with total_episodes=total_episodes|add:season.episodes.count %}{% endwith %}
-                        {% endfor %}
-                        {{ total_episodes }}
-                        {% endwith %}
+                        {{ tv_show.total_episodes }}
                     </dd>
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-600">Duration</dt>
                     <dd class="text-gray-900 font-medium">
                         {% if tv_show.end_date %}
-                        {{ tv_show.end_date.year|add:"-1"|add:"-"|add:tv_show.start_date.year }} years
+                        {{ tv_show.end_date.year|subtract:tv_show.start_date.year }} years
                         {% else %}
-                        {{ tv_show.start_date.year|add:"-1"|add:"-"|add:2024 }} years (ongoing)
+                        {{ tv_show.start_date.year|subtract:2024 }} years (ongoing)
                         {% endif %}
                     </dd>
                 </div>

@@ -1,5 +1,7 @@
 from django.contrib import admin
-from movies.models import Actor, Director, Movie, TVShow, Season, Episode, MovieRating, EpisodeRating
+from django.utils.html import format_html
+
+from movies.models import Actor, Director, Movie, TVShow, Season, Episode
 
 
 class ActorInline(admin.TabularInline):
@@ -40,7 +42,7 @@ class DirectorAdmin(admin.ModelAdmin):
 
 @admin.register(Movie)
 class MovieAdmin(admin.ModelAdmin):
-    list_display = ['title', 'genre', 'release_date', 'duration', 'rating', 'poster_preview']
+    list_display = ['title', 'genre', 'release_date', 'duration', 'avg_rating', 'poster_preview']
     list_filter = ['genre', 'release_date']
     search_fields = ['title', 'description']
     filter_horizontal = ['actors', 'directors']
@@ -49,15 +51,21 @@ class MovieAdmin(admin.ModelAdmin):
     
     def poster_preview(self, obj):
         if obj.poster:
-            return f'<img src="{obj.poster}" style="max-height: 50px; max-width: 50px;" />'
+            return format_html(f'<img src="{obj.poster}" style="max-height: 50px; max-width: 50px;" />')
         return "No poster"
     poster_preview.short_description = 'Poster'
     poster_preview.allow_tags = True
 
+    @admin.display(description='Avg Rating')
+    def avg_rating(self, obj):
+        if obj.rating:
+            return f"{obj.rating:.1f} ({obj.ratings.count()} Ratings)"
+        return "No ratings yet"
+
 
 @admin.register(TVShow)
 class TVShowAdmin(admin.ModelAdmin):
-    list_display = ['title', 'genre', 'rating', 'poster_preview']
+    list_display = ['title', 'genre', 'avg_rating', 'poster_preview']
     list_filter = ['genre']
     search_fields = ['title', 'description']
     readonly_fields = ['rating', 'poster_preview']
@@ -65,10 +73,16 @@ class TVShowAdmin(admin.ModelAdmin):
     
     def poster_preview(self, obj):
         if obj.poster:
-            return f'<img src="{obj.poster}" style="max-height: 50px; max-width: 50px;" />'
+            return format_html(f'<img src="{obj.poster}" style="max-height: 50px; max-width: 50px;" />')
         return "No poster"
     poster_preview.short_description = 'Poster'
     poster_preview.allow_tags = True
+
+    @admin.display(description='Avg Rating')
+    def avg_rating(self, obj):
+        if obj.rating:
+            return f"{obj.rating:.1f}"
+        return "No ratings yet"
 
 
 @admin.register(Season)

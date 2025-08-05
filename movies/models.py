@@ -36,6 +36,7 @@ class Actor(Person):
         for episode in self.tv_show_episodes.all():
             if episode.season.show.id not in seen_shows:
                 tv_shows_count += 1
+            seen_shows.add(episode.season.show.id)
 
         return tv_shows_count
 
@@ -51,6 +52,7 @@ class Director(Person):
         for episode in self.tv_show_episodes.all():
             if episode.season.show.id not in seen_shows:
                 tv_shows_count += 1
+            seen_shows.add(episode.season.show.id)
 
         return tv_shows_count
 
@@ -110,7 +112,7 @@ class Movie(models.Model):
             return "No ratings yet"
 
         average_rating = self.ratings.aggregate(Avg('rating', output_field=DecimalField()))['rating__avg']
-        return f"{average_rating:.1f}"
+        return average_rating
 
 
 class MovieRating(models.Model):
@@ -142,6 +144,14 @@ class TVShow(models.Model):
             return 'No ratings yet'
 
         return Decimal(total_rating / self.seasons.count())
+
+    @property
+    def total_episodes(self) -> int:
+        total_episodes = 0
+        for season in self.seasons.all():
+            total_episodes += season.episodes.count()
+
+        return total_episodes
 
 
 class Season(models.Model):
@@ -197,7 +207,7 @@ class Episode(models.Model):
             return "No ratings yet"
 
         average_rating = self.ratings.aggregate(Avg('rating', output_field=DecimalField()))['rating__avg']
-        return f"{average_rating:.1f}"
+        return average_rating
 
 
 class EpisodeRating(models.Model):

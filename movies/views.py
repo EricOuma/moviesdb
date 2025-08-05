@@ -2,23 +2,24 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import Avg, Count
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .models import Movie, TVShow, Actor, Director, GenreChoices
+from movies.models import Movie, TVShow, Actor, Director, GenreChoices
 
 
 def home(request):
     """Home page with featured content"""
-    # Get featured movies and TV shows
-    featured_movies = Movie.objects.annotate(
+    movies = Movie.objects.annotate(
         avg_rating=Avg('ratings__rating')
-    ).filter(avg_rating__gte=4.0).order_by('-avg_rating')[:6]
-    
-    featured_tv_shows = TVShow.objects.annotate(
+    )
+    tv_shows = TVShow.objects.annotate(
         avg_rating=Avg('seasons__episodes__ratings__rating')
-    ).filter(avg_rating__gte=4.0).order_by('-avg_rating')[:6]
+    )
+    # Get featured movies and TV shows
+    featured_movies = movies.filter(avg_rating__gte=4.0).order_by('-avg_rating')[:6]
+    featured_tv_shows = tv_shows.filter(avg_rating__gte=4.0).order_by('-avg_rating')[:6]
     
     # Get latest releases
-    latest_movies = Movie.objects.order_by('-release_date')[:8]
-    latest_tv_shows = TVShow.objects.order_by('-start_date')[:8]
+    latest_movies = movies.order_by('-release_date')[:8]
+    latest_tv_shows = tv_shows.order_by('-start_date')[:8]
     
     context = {
         'featured_movies': featured_movies,
@@ -188,14 +189,51 @@ def actor_detail(request, actor_id):
     return render(request, 'movies/actor_detail.html', context)
 
 
+def director_list(request):
+    """List all directors"""
+    directors = Director.objects.annotate(
+        movie_count=Count('movies'),
+        tv_episode_count=Count('tv_show_episodes')
+    ).order_by('first_name')
+    
+    # Search
+    search = request.GET.get('search')
+    if search:
+        directors = directors.filter(
+            Q(first_name__icontains=search) | 
+            Q(last_name__icontains=search)
+        )
+    
+    # Pagination
+    paginator = Paginator(directors, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'current_search': search,
+    }
+    return render(request, 'movies/director_list.html', context)
+
+
+def director_detail(request, director_id):
+    """Detailed view of a single director"""
+    director = get_object_or_404(Director, id=director_id)
+    
+    context = {
+        'director': director,
+    }
+    return render(request, 'movies/director_detail.html', context)
+
+
 def search(request):
-    """Global search across movies, TV shows, and actors"""
+    """Global search across movies, TV shows, actors, and directors"""
     query = request.GET.get('q', '')
     min_rating = request.GET.get('min_rating', '')
     max_rating = request.GET.get('max_rating', '')
     year_from = request.GET.get('year_from', '')
     year_to = request.GET.get('year_to', '')
-    content_type = request.GET.get('content_type', 'all')  # all, movies, tv_shows, actors
+    content_type = request.GET.get('content_type', 'all')  # all, movies, tv_shows, actors, directors
     
     results = {}
     
@@ -237,10 +275,10 @@ def search(request):
             tv_shows = tv_shows.filter(start_date__year__lte=int(year_to))
         
         # Search actors
-        actors = Actor.objects.filter(
-            Q(first_name__icontains=query) | 
-            Q(last_name__icontains=query)
-        )
+        actors = Actor.objects.filter(full_name__icontains=query)
+        
+        # Search directors
+        directors = Director.objects.filter(full_name__icontains=query)
         
         # Limit results based on content type
         if content_type == 'movies':
@@ -249,11 +287,14 @@ def search(request):
             results = {'tv_shows': tv_shows[:20]}
         elif content_type == 'actors':
             results = {'actors': actors[:20]}
+        elif content_type == 'directors':
+            results = {'directors': directors[:20]}
         else:
             results = {
-                'movies': movies[:10],
-                'tv_shows': tv_shows[:10],
-                'actors': actors[:10],
+                'movies': movies[:8],
+                'tv_shows': tv_shows[:8],
+                'actors': actors[:8],
+                'directors': directors[:8],
             }
     
     context = {

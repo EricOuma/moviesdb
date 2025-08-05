@@ -1,7 +1,7 @@
 from django import template
-from decimal import Decimal
 
 register = template.Library()
+
 
 @register.filter
 def rating_stars(rating):
@@ -29,6 +29,7 @@ def rating_stars(rating):
     except (ValueError, TypeError):
         return [(False, False) for _ in range(5)]
 
+
 @register.filter
 def format_rating(rating):
     """
@@ -41,4 +42,23 @@ def format_rating(rating):
         rating_value = float(rating)
         return f"{rating_value:.1f}"
     except (ValueError, TypeError):
-        return "No ratings yet" 
+        return "No ratings yet"
+
+
+@register.simple_tag(takes_context=True)
+def navactive(context, *view_names, class_names="text-movie-red"):
+    resolver_match = context['request'].resolver_match
+    if resolver_match.url_name in view_names:
+        return class_names
+    return ""
+
+
+@register.filter
+def subtract(value, arg):
+    try:
+        return int(value) - int(arg)
+    except ValueError:
+        try:
+            return value - arg
+        except TypeError:
+            return ""

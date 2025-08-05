@@ -50,7 +50,7 @@
                 </div>
                 <div class="flex items-center">
                     <div class="flex text-yellow-400">
-                        {% for star in movie.rating|rating_stars %}
+                        {% for star in movie.avg_rating|rating_stars %}
                         {% if star.0 %}
                         <i class="fas fa-star text-yellow-400"></i>
                         {% elif star.1 %}
@@ -60,7 +60,7 @@
                         {% endif %}
                         {% endfor %}
                     </div>
-                    <span class="ml-2 text-sm text-gray-600">{{ movie.rating|format_rating }}</span>
+                    <span class="ml-2 text-sm text-gray-600">{{ movie.avg_rating|format_rating }}</span>
                 </div>
             </div>
         </div>
@@ -97,7 +97,7 @@
                 </div>
                 <div class="flex items-center">
                     <div class="flex text-yellow-400">
-                        {% for star in tv_show.rating|rating_stars %}
+                        {% for star in tv_show.avg_rating|rating_stars %}
                         {% if star.0 %}
                         <i class="fas fa-star text-yellow-400"></i>
                         {% elif star.1 %}
@@ -107,7 +107,7 @@
                         {% endif %}
                         {% endfor %}
                     </div>
-                    <span class="ml-2 text-sm text-gray-600">{{ tv_show.rating|format_rating }}</span>
+                    <span class="ml-2 text-sm text-gray-600">{{ tv_show.avg_rating|format_rating }}</span>
                 </div>
             </div>
         </div>
@@ -148,7 +148,7 @@
                         <p class="text-sm text-gray-600 mb-2">{{ movie.genre|title }} • {{ movie.release_date.year }}</p>
                         <div class="flex items-center">
                             <div class="flex text-yellow-400 text-sm">
-                                {% for star in movie.rating|rating_stars %}
+                                {% for star in movie.avg_rating|rating_stars %}
                                 {% if star.0 %}
                                 <i class="fas fa-star text-yellow-400"></i>
                                 {% elif star.1 %}
@@ -158,7 +158,7 @@
                                 {% endif %}
                                 {% endfor %}
                             </div>
-                            <span class="ml-2 text-sm text-gray-600">{{ movie.rating|format_rating }}</span>
+                            <span class="ml-2 text-sm text-gray-600">{{ movie.avg_rating|format_rating }}</span>
                         </div>
                     </div>
                 </div>
@@ -198,7 +198,7 @@
                         <p class="text-sm text-gray-600 mb-2">{{ tv_show.genre|title }} • {{ tv_show.start_date.year }}</p>
                         <div class="flex items-center">
                             <div class="flex text-yellow-400 text-sm">
-                                {% for star in tv_show.rating|rating_stars %}
+                                {% for star in tv_show.avg_rating|rating_stars %}
                                 {% if star.0 %}
                                 <i class="fas fa-star text-yellow-400"></i>
                                 {% elif star.1 %}
@@ -208,7 +208,7 @@
                                 {% endif %}
                                 {% endfor %}
                             </div>
-                            <span class="ml-2 text-sm text-gray-600">{{ tv_show.rating|format_rating }}</span>
+                            <span class="ml-2 text-sm text-gray-600">{{ tv_show.avg_rating|format_rating }}</span>
                         </div>
                     </div>
                 </div>
