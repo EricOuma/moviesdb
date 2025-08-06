@@ -141,9 +141,9 @@ INTERNAL_IPS = [
     '127.0.0.1',
 ]
 
-# TODO: Performance Issue - No cache configuration
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
     }
 }

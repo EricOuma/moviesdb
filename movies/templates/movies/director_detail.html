@@ -60,7 +60,7 @@
 </div>
 
 <!-- Movies Section -->
-{% if director.movies.all %}
+{% if director.movies.exists %}
 <section class="mb-8">
     <h2 class="text-2xl font-bold text-gray-900 mb-6">Movies</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -107,15 +107,15 @@
 {% endif %}
 
 <!-- TV Shows Section -->
-{% if director.tv_show_episodes.all %}
+{% if director.tv_show_episodes.exists %}
 <section class="mb-8">
     <h2 class="text-2xl font-bold text-gray-900 mb-6">TV Shows</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {% for episode in director.tv_show_episodes.all|slice:":12" %}
+        {% for show in director.tv_shows|slice:":12" %}
         <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-            <a href="{% url 'movies:tv_show_detail' episode.season.show.id %}">
-                {% if episode.season.show.poster %}
-                <img src="{{ episode.season.show.poster }}" alt="{{ episode.season.show.title }}" class="w-full h-80 object-cover">
+            <a href="{% url 'movies:tv_show_detail' show.id %}">
+                {% if show.poster %}
+                <img src="{{ show.poster }}" alt="{{ show.title }}" class="w-full h-80 object-cover">
                 {% else %}
                 <div class="w-full h-80 bg-gray-200 flex items-center justify-center">
                     <i class="fas fa-tv text-gray-400 text-4xl"></i>
@@ -124,14 +124,14 @@
             </a>
             <div class="p-4">
                 <h3 class="font-semibold text-lg mb-2 truncate">
-                    <a href="{% url 'movies:tv_show_detail' episode.season.show.id %}" class="hover:text-movie-red transition-colors">
-                        {{ episode.season.show.title }}
+                    <a href="{% url 'movies:tv_show_detail' show.id %}" class="hover:text-movie-red transition-colors">
+                        {{ show.title }}
                     </a>
                 </h3>
-                <p class="text-sm text-gray-600 mb-2">{{ episode.full_title }}</p>
+                <p class="text-sm text-gray-600 mb-2">{{ show.title }}</p>
                 <div class="flex items-center justify-between text-sm text-gray-600">
-                    <span class="bg-gray-100 px-2 py-1 rounded">{{ episode.season.show.genre|title }}</span>
-                    <span>{{ episode.season.show.start_date.year }}</span>
+                    <span class="bg-gray-100 px-2 py-1 rounded">{{ show.genre|title }}</span>
+                    <span>{{ show.start_date.year }}</span>
                 </div>
             </div>
         </div>

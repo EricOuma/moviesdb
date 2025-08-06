@@ -2,8 +2,9 @@ from decimal import Decimal
 
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.db.models import Avg, DecimalField
+from django.db.models import Avg, DecimalField, OuterRef, Subquery
 from django.db.models.functions import Concat
+from django.utils.functional import cached_property
 
 
 class Person(models.Model):
@@ -23,38 +24,32 @@ class Person(models.Model):
     def __str__(self):
         return self.full_name
 
+    @cached_property
+    def total_movies(self):
+        if hasattr(self, 'movies'):
+            return self.movies.count()
+        return 0
+
 
 class Actor(Person):
     @property
-    def total_movies(self):
-        return self.movies.count()
+    def tv_shows(self):
+        return TVShow.objects.filter(seasons__episodes__actors=self).distinct()
 
-    @property
+    @cached_property
     def total_tv_shows(self):
-        tv_shows_count = 0
-        seen_shows = set()
-        for episode in self.tv_show_episodes.all():
-            if episode.season.show.id not in seen_shows:
-                tv_shows_count += 1
-            seen_shows.add(episode.season.show.id)
-
-        return tv_shows_count
+        return self.tv_shows.count()
 
 
 class Director(Person):
-    def total_movies(self):
-        return self.movies.count()
 
     @property
-    def total_tv_shows(self):
-        tv_shows_count = 0
-        seen_shows = set()
-        for episode in self.tv_show_episodes.all():
-            if episode.season.show.id not in seen_shows:
-                tv_shows_count += 1
-            seen_shows.add(episode.season.show.id)
+    def tv_shows(self):
+        return TVShow.objects.filter(seasons__episodes__directors=self).distinct()
 
-        return tv_shows_count
+    @cached_property
+    def total_tv_shows(self):
+        return self.tv_shows.count()
 
 
 class GenreChoices(models.TextChoices):
@@ -106,7 +101,7 @@ class Movie(models.Model):
     def director_names(self) -> str:
         return ", ".join([director.name for director in self.directors.all()])
 
-    @property
+    @cached_property
     def rating(self) -> str:
         if not self.ratings.exists():
             return "No ratings yet"
@@ -134,16 +129,35 @@ class TVShow(models.Model):
     def __str__(self):
         return self.title
 
-    @property
+    @cached_property
     def rating(self) -> Decimal | str:
-        total_rating = 0
-        for season in self.seasons.all():
-            total_rating += season.rating if isinstance(season.rating, Decimal) else 0
+        # Subquery to get average rating for a single episode
+        episode_rating_subquery = EpisodeRating.objects.filter(
+            episode=OuterRef('pk')
+        ).values('episode').annotate(
+            avg_rating=Avg('rating', output_field=DecimalField())
+        ).values('avg_rating')[:1]
 
-        if total_rating == 0:
+        episodes_with_ratings_subquery = Episode.objects.filter(
+            season=OuterRef('pk')
+        ).values('season').annotate(
+            avg_rating=Subquery(episode_rating_subquery, output_field=DecimalField())
+        ).values('avg_rating')[:1]
+
+        # Annotate each season with its average rating
+        seasons_with_ratings = self.seasons.annotate(
+            rating=Subquery(episodes_with_ratings_subquery, output_field=DecimalField())
+        )
+
+        # Compute the average of those ratings across all episodes
+        avg_rating = seasons_with_ratings.aggregate(
+            Avg('rating', output_field=DecimalField())
+        )['rating__avg']
+
+        if avg_rating == 0:
             return 'No ratings yet'
 
-        return Decimal(total_rating / self.seasons.count())
+        return avg_rating
 
     @property
     def total_episodes(self) -> int:
@@ -168,15 +182,28 @@ class Season(models.Model):
         return f"{self.show.title} - Season {self.number}"
 
     @property
-    def rating(self) -> Decimal|str:
-        total_rating = 0
-        for episode in self.episodes.all():
-            total_rating += episode.rating if isinstance(episode.rating, Decimal) else 0
+    def rating(self) -> Decimal | str:
+        # Subquery to get average rating for a single episode
+        episode_rating_subquery = EpisodeRating.objects.filter(
+            episode=OuterRef('pk')
+        ).values('episode').annotate(
+            avg_rating=Avg('rating', output_field=DecimalField())
+        ).values('avg_rating')[:1]
 
-        if total_rating == 0:
+        # Annotate each episode with its average rating
+        episodes_with_ratings = self.episodes.annotate(
+            rating=Subquery(episode_rating_subquery, output_field=DecimalField())
+        )
+
+        # Compute the average of those ratings across all episodes
+        avg_rating = episodes_with_ratings.aggregate(
+            Avg('rating', output_field=DecimalField())
+        )['rating__avg']
+
+        if avg_rating == 0:
             return 'No ratings yet'
 
-        return Decimal(total_rating/self.episodes.count())
+        return avg_rating
 
 
 class Episode(models.Model):
@@ -201,7 +228,7 @@ class Episode(models.Model):
     def full_title(self):
         return f"S{self.season.number:02d}E{self.episode_number:02d} - {self.title}"
 
-    @property
+    @cached_property
     def rating(self) -> str:
         if not self.ratings.exists():
             return "No ratings yet"

@@ -1,8 +1,8 @@
 from django.shortcuts import render, get_object_or_404
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Prefetch
 from django.core.paginator import Paginator
 from django.db.models import Q
-from movies.models import Movie, TVShow, Actor, Director, GenreChoices
+from movies.models import Movie, TVShow, Actor, Director, GenreChoices, Season
 
 
 def home(request):
@@ -138,7 +138,12 @@ def tv_show_list(request):
 
 def tv_show_detail(request, tv_show_id):
     """Detailed view of a single TV show"""
-    tv_show = get_object_or_404(TVShow, id=tv_show_id)
+    tv_show = get_object_or_404(
+        TVShow.objects.prefetch_related(
+            Prefetch('seasons', queryset=Season.objects.prefetch_related('episodes'))
+        ),
+        id=tv_show_id
+    )
     
     # Get similar TV shows (same genre)
     similar_tv_shows = TVShow.objects.filter(
@@ -154,10 +159,7 @@ def tv_show_detail(request, tv_show_id):
 
 def actor_list(request):
     """List all actors"""
-    actors = Actor.objects.annotate(
-        movie_count=Count('movies'),
-        tv_episode_count=Count('tv_show_episodes')
-    ).order_by('first_name')
+    actors = Actor.objects.all()
     
     # Search
     search = request.GET.get('search')
@@ -191,10 +193,7 @@ def actor_detail(request, actor_id):
 
 def director_list(request):
     """List all directors"""
-    directors = Director.objects.annotate(
-        movie_count=Count('movies'),
-        tv_episode_count=Count('tv_show_episodes')
-    ).order_by('first_name')
+    directors = Director.objects.all()
     
     # Search
     search = request.GET.get('search')
@@ -218,8 +217,7 @@ def director_list(request):
 
 def director_detail(request, director_id):
     """Detailed view of a single director"""
-    director = get_object_or_404(Director, id=director_id)
-    
+    director = get_object_or_404(Director.objects.prefetch_related('movies'), id=director_id)
     context = {
         'director': director,
     }
