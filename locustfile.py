@@ -29,25 +29,25 @@ class AwesomeUser(HttpUser):
     @task
     def movie_detail(self):
         with self.client.rename_request("/movies/[id]/"):
-            for i in random.choices(list(range(500)), k=5):
+            for i in random.choices(list(range(1, 500)), k=5):
                 self.client.get(f"/movies/{i}/")
 
     @task
     def tv_show_detail(self):
         with self.client.rename_request("/tv-shows/[id]/"):
-            for i in random.choices(list(range(250)), k=5):
+            for i in random.choices(list(range(1, 250)), k=5):
                 self.client.get(f"/tv-shows/{i}/")
 
     @task
     def actor_detail(self):
         with self.client.rename_request("/actors/[id]/"):
-            for i in random.choices(list(range(200)), k=5):
+            for i in random.choices(list(range(1, 200)), k=5):
                 self.client.get(f"/actors/{i}/")
 
     @task
     def director_detail(self):
         with self.client.rename_request("/directors/[id]/"):
-            for i in random.choices(list(range(100)), k=5):
+            for i in random.choices(list(range(1, 100)), k=5):
                 self.client.get(f"/directors/{i}/")
 
     @task
