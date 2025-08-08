@@ -13,7 +13,7 @@ from collections import defaultdict
 from django.core.management.base import BaseCommand
 from django.db.models import QuerySet, Avg
 
-from movies.models import Actor, Episode, MovieRating, EpisodeRating
+from movies.models import Actor, Episode, MovieRating, EpisodeRating, GenreChoices
 
 from memory_profiler import profile
 
@@ -48,11 +48,6 @@ class Command(BaseCommand):
         )
 
     def _analyze_all_actors(self, actors: QuerySet[Actor]) -> List[Dict]:
-        """
-        SYNCHRONOUS ISSUE #1: Sequential processing - could be parallelized
-        This is the main bottleneck that makes it run for 5 minutes
-        """
-
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             results = []
             future_to_actor = {executor.submit(self._analyze_single_actor, actor): actor for actor in actors}
@@ -68,11 +63,6 @@ class Command(BaseCommand):
         return results
 
     def _analyze_single_actor(self, actor: Actor) -> Dict:
-        """
-        Analyze single actor - contains multiple N+1 queries and inefficiencies
-        SYNCHRONOUS ISSUE #3: Multiple database hits per actor
-        """
-
         movies = actor.movies.all()
         movie_ratings_data = MovieRating.objects.filter(movie__in=movies)
         movie_avg = movie_ratings_data.aggregate(avg_rating=Avg('rating'))['avg_rating']
@@ -99,8 +89,8 @@ class Command(BaseCommand):
             'movie_avg_rating': movie_avg,
             'episode_avg_rating': episode_avg,
             'overall_avg_rating': self._calculate_overall_average(all_rating_values),
-            'genre_breakdown': genre_breakdown,  # MEMORY LEAK #11: Detailed genre data
-            'collaborations': collaborations,  # MEMORY LEAK #12: Collaboration data
+            'genre_breakdown': genre_breakdown,
+            'collaborations': collaborations,
             'rating_distribution': self._calculate_rating_distribution(all_rating_values),
             'career_metrics': self._calculate_career_metrics(actor, movies, episodes),
         }
@@ -133,17 +123,12 @@ class Command(BaseCommand):
             genre = movie.genre
             genre_data[genre]['movies'] += 1
 
-            # SYNCHRONOUS ISSUE #16: Individual query for movie ratings by genre
-            genre_data[genre]['ratings'].extend(list(movie.ratings.all()))  # MEMORY LEAK #15
-
         # SYNCHRONOUS ISSUE #17: Process each episode individually
         for episode in episodes.select_related('season__show').prefetch_related('ratings'):
             show_genre = episode.season.show.genre  # Potential N+1 if not prefetched
             genre_data[show_genre]['episodes'] += 1
-            genre_data[show_genre]['ratings'].extend(list(episode.ratings.all()))  # MEMORY LEAK #16
 
-        # Convert defaultdict to regular dict (MEMORY LEAK #17: keeping all data)
-        return dict(genre_data)
+        return genre_data
 
     def _find_collaborations(self, actor: Actor, movies: List, episodes: List) -> Dict:
         """
@@ -232,43 +217,72 @@ class Command(BaseCommand):
 
     def _generate_report(self, results: List[Dict]):
         """
-        SYNCHRONOUS ISSUE #33: Report generation done sequentially
-        This could be done while processing or in parallel
+        Print detailed analysis data for each actor
         """
-        self.stdout.write("\n" + "=" * 60)
-        self.stdout.write("ACTOR RATING ANALYSIS REPORT")
-        self.stdout.write("=" * 60)
+        if not results:
+            self.stdout.write(self.style.WARNING('No results to report.'))
+            return
 
-        total_actors = len(results)
+        self.stdout.write("\n" + "="*80)
+        self.stdout.write("ACTOR DETAILED ANALYSIS REPORT")
+        self.stdout.write("="*80)
 
-        # SYNCHRONOUS ISSUE #34: Calculate summary statistics in Python instead of DB
-        total_movies = sum(r['total_movies'] for r in results)
-        total_episodes = sum(r['total_episodes'] for r in results)
+        for i, actor_data in enumerate(results, 1):
+            self.stdout.write(f"\n[{i}] ACTOR: {actor_data['name']} (ID: {actor_data['actor_id']})")
+            self.stdout.write("-" * 60)
 
-        # SYNCHRONOUS ISSUE #35: Find top performers by iterating through all results
-        top_movie_actors = sorted(
-            [r for r in results if r['movie_avg_rating'] > 0],
-            key=lambda x: x['movie_avg_rating'],
-            reverse=True
-        )[:10]
+            # Basic statistics
+            self.stdout.write(f"Movies: {actor_data['total_movies']}")
+            self.stdout.write(f"TV Episodes: {actor_data['total_episodes']}")
+            self.stdout.write(f"Movie Average Rating: {actor_data['movie_avg_rating']:.2f}")
+            self.stdout.write(f"Episode Average Rating: {actor_data['episode_avg_rating']:.2f}")
+            self.stdout.write(f"Overall Average Rating: {actor_data['overall_avg_rating']:.2f}")
 
-        top_tv_actors = sorted(
-            [r for r in results if r['episode_avg_rating'] > 0],
-            key=lambda x: x['episode_avg_rating'],
-            reverse=True
-        )[:10]
+            # Career metrics
+            if actor_data['career_metrics']:
+                career = actor_data['career_metrics']
+                self.stdout.write(f"Career Span: {career.get('career_span_years', 'N/A')} years")
+                if career.get('career_start'):
+                    self.stdout.write(f"Career Start: {career['career_start']}")
+                if career.get('career_end'):
+                    self.stdout.write(f"Latest Work: {career['career_end']}")
 
-        self.stdout.write(f"\nSUMMARY:")
-        self.stdout.write(f"Total Actors Analyzed: {total_actors}")
-        self.stdout.write(f"Total Movies: {total_movies}")
-        self.stdout.write(f"Total Episodes: {total_episodes}")
+            # Genre breakdown
+            if actor_data['genre_breakdown']:
+                self.stdout.write("\nGenre Breakdown:")
+                for genre, data in actor_data['genre_breakdown'].items():
+                    genre_name = dict(GenreChoices.choices).get(genre, genre)
+                    movies = data.get('movies', 0)
+                    episodes = data.get('episodes', 0)
+                    avg_rating = data.get('avg_rating', 0)
 
-        self.stdout.write(f"\nTOP 10 MOVIE ACTORS BY RATING:")
-        for i, actor in enumerate(top_movie_actors, 1):
-            self.stdout.write(
-                f"{i:2d}. {actor['name']}: {actor['movie_avg_rating']:.2f} ({actor['total_movies']} movies)")
+                    if movies > 0 or episodes > 0:
+                        self.stdout.write(
+                            f"  {genre_name}: {movies} movies, {episodes} episodes, "
+                            f"avg rating: {avg_rating:.2f}"
+                        )
 
-        self.stdout.write(f"\nTOP 10 TV ACTORS BY RATING:")
-        for i, actor in enumerate(top_tv_actors, 1):
-            self.stdout.write(
-                f"{i:2d}. {actor['name']}: {actor['episode_avg_rating']:.2f} ({actor['total_episodes']} episodes)")
+            # Top collaborations
+            if actor_data['collaborations']:
+                self.stdout.write("\nTop Collaborations:")
+                # Show top 5 collaborators
+                top_collabs = sorted(
+                    actor_data['collaborations'].items(),
+                    key=lambda x: x[1],
+                    reverse=True
+                )[:5]
+
+                for collaborator, count in top_collabs:
+                    self.stdout.write(f"  {collaborator}: {count} times")
+
+            # Rating distribution
+            if actor_data['rating_distribution']:
+                total_ratings = sum(actor_data['rating_distribution'].values())
+                if total_ratings > 0:
+                    self.stdout.write(f"\nRating Distribution (total: {total_ratings}):")
+                    for rating in range(1, 6):
+                        count = actor_data['rating_distribution'].get(rating, 0)
+                        percentage = (count / total_ratings) * 100 if total_ratings > 0 else 0
+                        self.stdout.write(f"  {rating} stars: {count} ({percentage:.1f}%)")
+
+            self.stdout.write("")  # Empty line between actors
