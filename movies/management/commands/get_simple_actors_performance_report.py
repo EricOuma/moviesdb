@@ -11,7 +11,7 @@ from typing import Dict, List
 from collections import defaultdict
 
 from django.core.management.base import BaseCommand
-from django.db.models import QuerySet, Avg
+from django.db.models import QuerySet, Avg, Count, DecimalField
 
 from movies.models import Actor, Episode, MovieRating, EpisodeRating, GenreChoices
 
@@ -112,21 +112,22 @@ class Command(BaseCommand):
         return total / Decimal(str(len(rating_values)))
 
     def _analyze_actor_genres(self, actor: Actor, movies: QuerySet, episodes: QuerySet) -> Dict:
-        """
-        SYNCHRONOUS ISSUE #14: Genre analysis with individual queries
-        This could be done with a single aggregation query
-        """
-        genre_data = defaultdict(lambda: {'movies': 0, 'episodes': 0, 'ratings': []})
+        genre_data = defaultdict(lambda: {'movies': 0, 'episodes': 0, 'avg_rating': 0})
+        movie_genre_counts = movies.values('genre').annotate(count=Count('genre'))
+        for data in movie_genre_counts:
+            genre = data['genre']
+            genre_data[genre]['movies'] += data['count']
+            genre_data[genre]['avg_rating'] = MovieRating.objects.filter(
+                movie__in=movies, movie__genre=genre
+            ).aggregate(Avg('rating', output_field=DecimalField()))['rating__avg']
 
-        # SYNCHRONOUS ISSUE #15: Process each movie individually for genre analysis
-        for movie in movies.prefetch_related('ratings'):
-            genre = movie.genre
-            genre_data[genre]['movies'] += 1
-
-        # SYNCHRONOUS ISSUE #17: Process each episode individually
-        for episode in episodes.select_related('season__show').prefetch_related('ratings'):
-            show_genre = episode.season.show.genre  # Potential N+1 if not prefetched
-            genre_data[show_genre]['episodes'] += 1
+        episode_genre_counts = episodes.values('season__show__genre').annotate(count=Count('season__show__genre'))
+        for data in episode_genre_counts:
+            genre = data['season__show__genre']
+            genre_data[genre]['episodes'] += data['count']
+            genre_data[genre]['avg_rating'] = EpisodeRating.objects.filter(
+                episode__in=episodes, episode__season__show__genre=genre
+            ).aggregate(Avg('rating', output_field=DecimalField()))['rating__avg']
 
         return genre_data
 
