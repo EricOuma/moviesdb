@@ -15,23 +15,35 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-3. Run migrations:
+3. Create a .env file in the root of the project and add the following:
+```
+SECRET_KEY=jg8guguighfihv89g9ufhf9h
+DB_NAME=moviesdb
+DB_USER=movies_admin
+DB_PASSWORD=64C2gsE7qUli
+```
+
+4. Run migrations:
 ```bash
-python manage.py makemigrations
 python manage.py migrate
 ```
 
-4. Create a superuser:
+5. Create a superuser:
 ```bash
 python manage.py createsuperuser
 ```
 
-5. Run the development server:
+6. Load test data:
+```bash
+python manage.py populate_test_data
+```
+
+7. Run the development server:
 ```bash
 python manage.py runserver
 ```
 
-## Performance Pitfalls Demonstrated
+## Some Performance Pitfalls Demonstrated
 
 ### 1. Memory Leaks
 - Static cache in `TVShow` model that grows indefinitely
